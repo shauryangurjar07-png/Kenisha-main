@@ -1,0 +1,94 @@
+name: Build Kenisha Cute APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Kenisha
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show repository files
+        run: |
+          echo "Files uploaded:"
+          ls -lh
+
+      - name: Extract Kenisha app
+        run: |
+          mkdir -p project
+          unzip -q kenisha-cute-app-code.zip -d project
+
+      - name: Create media directories
+        run: |
+          mkdir -p project/app/src/main/assets/photos
+          mkdir -p project/app/src/main/assets/videos
+
+      - name: Extract Media Pack 01
+        run: unzip -q kenisha-media-pack-01.zip -d project/app/src/main/assets
+
+      - name: Extract Media Pack 02
+        run: unzip -q kenisha-media-pack-02.zip -d project/app/src/main/assets
+
+      - name: Extract Media Pack 03
+        run: unzip -q kenisha-media-pack-03.zip -d project/app/src/main/assets
+
+      - name: Extract Media Pack 04
+        run: unzip -q kenisha-media-pack-04.zip -d project/app/src/main/assets
+
+      - name: Extract Media Pack 05
+        run: unzip -q kenisha-media-pack-05.zip -d project/app/src/main/assets
+
+      - name: Extract Media Pack 06
+        run: unzip -q kenisha-media-pack-06.zip -d project/app/src/main/assets
+
+      - name: Verify original media
+        run: |
+          PHOTOS=$(find project/app/src/main/assets/photos -type f | wc -l)
+          VIDEOS=$(find project/app/src/main/assets/videos -type f | wc -l)
+
+          echo "Photos found: $PHOTOS"
+          echo "Videos found: $VIDEOS"
+
+          if [ "$PHOTOS" -ne 59 ]; then
+            echo "ERROR: Expected 59 photos but found $PHOTOS"
+            exit 1
+          fi
+
+          if [ "$VIDEOS" -ne 18 ]; then
+            echo "ERROR: Expected 18 videos but found $VIDEOS"
+            exit 1
+          fi
+
+          echo "Media verification successful."
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build Kenisha APK
+        working-directory: project
+        run: |
+          gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Verify APK
+        run: |
+          ls -lh project/app/build/outputs/apk/debug/
+          test -f project/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Kenisha APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kenisha-Cute-APK
+          path: project/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
